@@ -118,9 +118,6 @@ def llm_questions(id: int):
         if interview is None:
             raise HTTPException(status_code=404, detail="Interview not found")
 
-        statement = delete(Question).where(Question.interview_id == id)
-        result = session.execute(statement)
-
         new_questions = generate_questions(role=interview.role, company= interview.company)
         list_of_questions = [Question(interview_id=id, question=question) for question in new_questions]
         session.add_all(list_of_questions)
