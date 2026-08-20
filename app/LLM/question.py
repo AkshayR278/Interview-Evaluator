@@ -11,7 +11,7 @@ gemini = OpenAI(base_url=GEMINI_BASE_URL, api_key=API_KEY)
 
 def generate_questions(role, company):
     system_prompt = f"""You are a senior {role} engineer at {company}. Your company is hiring for {role} freshers i.e., 
-    Give me 5 questions you would ask the candidate"""
+    Give me 5 technical questions you would ask the candidate"""
 
     user_prompt_prefix = "Good morning sir."
 
