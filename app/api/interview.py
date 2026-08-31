@@ -100,3 +100,31 @@ def delete_interview(id:int):
 
     finally:
         session.close()
+
+@router.post("/interviews/{id}/complete")
+def status_update(id:int):
+    session = sessionLocal()
+    try:
+        statement = select(Interview).where(Interview.id == id)
+        result = session.execute(statement)
+        interview = result.scalar_one_or_none()
+
+        if interview is None:
+            raise HTTPException(status_code=404, detail="Interview not found")
+
+        if interview.status == "in_progress":
+            questions = interview.question_interview
+            responses = [question.response for question in questions]
+            if all(responses):
+                interview.status = "completed"
+                session.commit()
+                session.refresh(interview)
+            else:
+                raise HTTPException(status_code=400, detail="Some answers are missing")
+        else:
+            raise HTTPException(status_code=409, detail="Interview is already completed")
+
+        return interview
+    finally:
+        session.close()
+

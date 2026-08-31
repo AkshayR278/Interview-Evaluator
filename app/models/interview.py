@@ -14,7 +14,10 @@ class Interview(Base):
 
     role = Column(String)
 
+    status = Column(String, default="in_progress")
+
     candidate_att = relationship("Candidate", back_populates = "interview_att")
 
     question_interview = relationship("Question", back_populates="interview_question")
 
+    interview_result_att = relationship("InterviewResult", back_populates="interview_att")

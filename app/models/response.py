@@ -8,10 +8,10 @@ class Response(Base):
 
     id = Column(Integer, primary_key=True)
 
-    question_id = Column(Integer, ForeignKey("questions.id"))
+    question_id = Column(Integer, ForeignKey("questions.id"), unique=True)
 
     answer = Column(String)
 
     question = relationship("Question", back_populates="response")
 
-    evaluation = relationship("Evaluation", back_populates= "response")
+    evaluation = relationship("Evaluation", back_populates= "response", uselist=False)

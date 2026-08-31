@@ -10,6 +10,7 @@ from app.models.interview import Interview
 from app.models.question import Question
 from app.models.response import Response
 from app.models.evaluation import Evaluation
+from app.models.interview_result import InterviewResult
 app = FastAPI()
 
 app.include_router(evaluation.router)
