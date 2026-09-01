@@ -115,10 +115,15 @@ def status_update(id:int):
         if interview.status == "in_progress":
             questions = interview.question_interview
             responses = [question.response for question in questions]
-            if all(responses):
+
+            if not questions:
+                raise HTTPException(status_code=400, detail="No questions found")
+
+            elif responses and all(responses):
                 interview.status = "completed"
                 session.commit()
                 session.refresh(interview)
+
             else:
                 raise HTTPException(status_code=400, detail="Some answers are missing")
         else:
@@ -127,4 +132,5 @@ def status_update(id:int):
         return interview
     finally:
         session.close()
+
 

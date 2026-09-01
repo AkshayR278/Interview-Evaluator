@@ -20,4 +20,4 @@ class Interview(Base):
 
     question_interview = relationship("Question", back_populates="interview_question")
 
-    interview_result_att = relationship("InterviewResult", back_populates="interview_att")
+    interview_result_att = relationship("InterviewResult", back_populates="interview_att", uselist=False)

@@ -12,6 +12,11 @@ def evaluate_response(question: str, answer: str):
     - filler words
 
     Give scores between 0 and 100.
+    
+    Before scoring, check whether the answer is a genuine, substantive attempt to address the question.
+    If the answer is null, empty, a single word, gibberish, a placeholder (e.g. "string", "test", "N/A"),
+    or otherwise does not meaningfully engage with the question, give a score of 0 to every attribute
+    and do not award partial credit for effort or tone.
 
     QUESTION:
         {question}

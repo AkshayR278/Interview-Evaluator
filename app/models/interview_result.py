@@ -14,4 +14,4 @@ class InterviewResult(Base):
 
     time_created = Column(DateTime, default=datetime.now)
 
-    interview_att = relationship("Interview", back_populates="interview_result_att")
+    interview_att = relationship("Interview", back_populates="interview_result_att", uselist=False)
