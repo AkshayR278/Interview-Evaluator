@@ -13,3 +13,6 @@ __pycache__/
 
 # Database
 *.db
+
+# Frontend
+**/node_modules/

@@ -1,0 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+/*
+  Design tokens for the Interview Evaluator frontend.
+  Concept: a quiet, focused "interview room" -- not a gamified quiz app.
+  Serif headings (Newsreader) carry gravity/thoughtfulness; Inter handles
+  functional UI text (buttons, inputs, labels) since it's built for clarity
+  at small sizes.
+*/
+@theme {
+  --color-ink: #171a21;          /* primary text, near-black with a blue cast */
+  --color-canvas: #efede6;       /* warm paper-grey background, not stark white */
+  --color-surface: #f8f7f3;      /* slightly lighter than canvas, for cards/panels */
+  --color-accent: #3454d1;       /* confident cobalt blue - primary actions */
+  --color-accent-warm: #c97a3d;  /* muted clay - used sparingly, score/attention states */
+  --color-success: #4b7f6b;      /* muted green - good scores */
+  --color-line: #d7d3c7;         /* hairline borders/dividers */
+
+  --font-display: "Newsreader", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+}

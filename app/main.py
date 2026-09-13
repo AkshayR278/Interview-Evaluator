@@ -11,7 +11,16 @@ from app.models.question import Question
 from app.models.response import Response
 from app.models.evaluation import Evaluation
 from app.models.interview_result import InterviewResult
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(evaluation.router)
 app.include_router(candidate.router)

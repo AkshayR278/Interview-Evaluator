@@ -36,6 +36,33 @@ def create_response(response : CreateResponse):
     finally:
         session.close()
 
+@router.post("/responses/skipped", response_model=ResponseResponse)
+def skip_response(question_id: int):
+    session = sessionLocal()
+    try:
+        statement = select(Question).where(Question.id == question_id)
+        result = session.execute(statement)
+        question = result.scalar_one_or_none()
+
+        if question is None:
+            raise HTTPException(status_code=404, detail="Question not found")
+
+        statement = select(Response).where(Response.question_id == question_id)
+        result = session.execute(statement)
+        response = result.scalar_one_or_none()
+
+        if response:
+            raise HTTPException(status_code=409, detail="Response already exists")
+
+        response_db = Response(question_id=question_id, answer=None)
+        session.add(response_db)
+        session.commit()
+        session.refresh(response_db)
+
+        return response_db
+    finally:
+        session.close()
+
 @router.get("/responses", response_model=list[ResponseResponse])
 def get_responses():
     session = sessionLocal()
@@ -107,8 +134,20 @@ async def transcribe_audio(question_id: int, audio_file: UploadFile = File(...))
                 language="en"
             )
             transcript = deepgram_response.results.channels[0].alternatives[0].transcript
+
+            if not transcript.strip():
+                raise HTTPException(
+                    status_code=400,
+                    detail="No speech detected in the audio"
+                )
+
+        except HTTPException:
+            raise
         except Exception:
-            raise HTTPException(status_code=502, detail="Transcription service failed")
+            raise HTTPException(
+                status_code=502,
+                detail="Transcription service failed"
+            )
 
         response_db = Response(question_id=question_id, answer=transcript)
         session.add(response_db)

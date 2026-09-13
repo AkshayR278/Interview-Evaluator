@@ -1,13 +1,15 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas.candidate import CandidateResponse, CreateCandidate, CandidateUpdate
+from app.schemas.candidate import CandidateResponse, CreateCandidate, CandidateUpdate, LoginCandidate
 from app.models.candidate import Candidate
 from app.database import sessionLocal
 from sqlalchemy import select
+from app.services.auth import hash_password, verify_password
 
 router = APIRouter()
 @router.post("/candidates", response_model=CandidateResponse)
 def create_candidate(candidate: CreateCandidate):
-    db_candidate = Candidate(name=candidate.name, email=candidate.email, password=candidate.password)
+    password = hash_password(candidate.password)
+    db_candidate = Candidate(name=candidate.name, email=candidate.email, password=password)
     session = sessionLocal()
     session.add(db_candidate)
 
@@ -17,6 +19,27 @@ def create_candidate(candidate: CreateCandidate):
     session.close()
 
     return db_candidate
+
+@router.post("/candidates/login")
+def login(credentials: LoginCandidate):
+    session = sessionLocal()
+    try:
+        statement = select(Candidate).where(Candidate.email == credentials.email)
+        result = session.execute(statement)
+        candidate = result.scalar_one_or_none()
+
+        if candidate is None:
+            raise HTTPException(status_code=404, detail="Email not found")
+
+        verification = verify_password(credentials.password, candidate.password)
+
+        if verification:
+            return {"candidate_id": candidate.id}
+        else:
+            raise HTTPException(status_code=401, detail="Email or password is incorrect")
+
+    finally:
+        session.close()
 
 @router.get("/candidates", response_model=list[CandidateResponse])
 def get_candidates():

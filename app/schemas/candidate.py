@@ -14,3 +14,6 @@ class CandidateUpdate(BaseModel):
     name: str
     email: str
 
+class LoginCandidate(BaseModel):
+    email: str
+    password: str
