@@ -17,3 +17,10 @@ __pycache__/
 # Frontend
 **/node_modules/
 **/.env.production
+
+# Build output
+**/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
