@@ -1,24 +1,16 @@
 # AI-Powered Interview Evaluator
 
-An end-to-end mock technical interview application. A candidate logs in,
-chooses a role and company, gets a set of technical questions generated
-by Gemini, answers them by typing or speaking, and receives an
-evaluation at the end.
+An end-to-end AI-powered mock technical interview application. A candidate can create an account, choose a role and company, receive AI-generated technical questions, answer them by typing or speaking, and receive an AI-based evaluation and interview score at the end.
 
-This project started as a FastAPI and PostgreSQL backend and gradually
-grew into a small full-stack application. The main focus has been on
-getting the data model and interview flow right before adding more
-features.
+The project started as a FastAPI and PostgreSQL backend and gradually grew into a full-stack application with AI question generation, AI answer evaluation, speech-to-text, a React frontend, authentication, and cloud deployment.
 
 ## What it does
 
-The current flow looks like this:
-
-``` text
+```text
 Candidate
    |
    v
-Login
+Signup / Login
    |
    v
 Choose role + company
@@ -34,123 +26,132 @@ Answer each question
    |--------------------|
    |                    |
  Type answer       Record answer
-   |                    |
-   |                Deepgram
-   |                    |
-   |-------> Response <-|
-              |
-              v
-        Gemini evaluation
-              |
-              v
-        Interview score
-              |
-              v
-           Results
+                        |
+                    Deepgram
+                        |
+                        v
+                   Transcript
+                        |
+   |--------------------|
+   |
+   v
+Response
+   |
+   v
+Gemini Evaluation
+   |
+   v
+Interview Score
+   |
+   v
+Results
 ```
 
-A candidate can also skip a question. A skipped question is stored as a
-response with no answer, is not sent to Gemini for evaluation, and
-contributes zero to the final score.
+A candidate can also skip a question. Skipped questions are stored as responses without an answer and are not sent for AI evaluation.
 
 ## Features
 
-### Candidate accounts
+### Candidate accounts and authentication
 
--   Candidate creation endpoint
--   Passwords are hashed with Argon2 using `pwdlib`
--   Login endpoint verifies the password against the stored hash
--   The returned candidate ID is stored in the browser's local storage
-    for the current frontend flow
+- Candidate signup
+- Candidate login
+- Password hashing with Argon2 using `pwdlib`
+- Candidate-specific interview flow
+- Lightweight frontend authentication flow
 
 ### Interview generation
 
-Each time a candidate starts an interview, a new `Interview` record is
-created.
+Each time a candidate starts an interview, a new `Interview` record is created.
 
 The interview stores:
 
--   Candidate
--   Company
--   Role
--   Status
+- Candidate
+- Company
+- Role
+- Status
 
-Gemini then generates exactly 5 technical questions for that interview.
+Gemini generates exactly 5 technical questions for the interview.
 
 ### Answering questions
 
-There are two ways to answer:
+Candidates can:
 
--   Type an answer
--   Record an answer using the browser microphone
+- Type an answer
+- Record an answer using the browser microphone
+- Skip a question
 
-Questions can also be skipped.
+The frontend uses the browser Speech Synthesis API to read questions aloud.
 
-The frontend uses the browser's Speech Synthesis API to read questions
-aloud.
-
-For recorded answers, the audio is sent to Deepgram and the resulting
-transcript is stored as the candidate's response.
+Recorded answers are sent to Deepgram for speech-to-text transcription. The transcript is then stored as the candidate response.
 
 ### AI evaluation
 
 Gemini evaluates submitted answers on:
 
--   Accuracy
--   Relevance
--   Technical quality
--   Grammar
--   Confidence
--   Filler-word count
+- Accuracy
+- Relevance
+- Technical quality
+- Grammar
+- Confidence
+- Filler-word count
 
-The evaluation also contains feedback and strengths.
+The evaluation also provides feedback and strengths.
 
 The scoring weights are:
 
-  Category       Weight
-  ------------ --------
-  Accuracy          30%
-  Relevance         30%
-  Technical         20%
-  Confidence        10%
-  Grammar           10%
+| Category | Weight |
+|---|---:|
+| Accuracy | 30% |
+| Relevance | 30% |
+| Technical | 20% |
+| Confidence | 10% |
+| Grammar | 10% |
 
-Accuracy and relevance therefore have the biggest effect on the score.
+The final interview score is calculated across the interview's questions. Skipped questions contribute zero to the final score.
 
-The final interview score is calculated over all questions. Since
-skipped questions have no evaluation, they contribute zero through the
-total-question denominator.
-
-## Tech stack
+## Tech Stack
 
 ### Backend
 
--   Python
--   FastAPI
--   SQLAlchemy
--   PostgreSQL
--   Pydantic
--   Gemini API through the OpenAI-compatible client
--   Deepgram
--   `pwdlib` with Argon2
+- Python
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Pydantic
+- Gemini API
+- Deepgram
+- `pwdlib` with Argon2
+- Gunicorn
+- Uvicorn
 
 ### Frontend
 
--   React
--   Vite
--   React Router
--   Axios
--   Tailwind CSS
+- React
+- Vite
+- React Router
+- Axios
+- Tailwind CSS
+- Browser Speech Synthesis API
+- Browser MediaRecorder API
 
-### Development tools
+### Database
 
--   Swagger / OpenAPI
--   pgAdmin
--   Git / GitHub
+- PostgreSQL
+- Neon
 
-## Project structure
+### Cloud / Infrastructure
 
-``` text
+- Amazon EC2
+- Amazon S3
+- Amazon CloudFront
+- Nginx
+- Let's Encrypt / Certbot
+- AWS IAM
+- systemd
+
+## Project Structure
+
+```text
 AI-Powered-Interview-Evaluator/
 |
 ├── app/
@@ -201,11 +202,9 @@ AI-Powered-Interview-Evaluator/
 └── README.md
 ```
 
-## Database design
+## Database Design
 
-The main relationships are:
-
-``` text
+```text
 Candidate
    |
    | 1-to-many
@@ -216,7 +215,7 @@ Interview
    v
 Question
    |
-   | 1-to-1
+   | 1-to-many
    v
 Response
    |
@@ -231,23 +230,72 @@ Interview
 InterviewResult
 ```
 
-The important part of the design is that an `Interview` represents one
-complete attempt.
+An `Interview` represents one complete attempt.
 
-If the same candidate starts another interview for the same role, a new
-`Interview` is created. This keeps the questions, responses,
-evaluations, and final score tied to that specific attempt.
+If the same candidate starts another interview, a new `Interview` record is created. This keeps questions, responses, evaluations, and the final score tied to that specific attempt.
 
-`question_id` is unique in `responses`, so a question can have at most
-one response. `response_id` is unique in `evaluations`, so a response
-can have at most one evaluation. `interview_id` is unique in
-`interview_result`, so an interview can have one final result.
+## API Endpoints
 
-## Running the backend
+### Candidates
+
+```text
+POST   /candidates
+GET    /candidates
+GET    /candidates/{id}
+PUT    /candidates/{id}
+DELETE /candidates/{id}
+```
+
+### Authentication
+
+```text
+POST /candidates/login
+```
+
+### Interviews
+
+```text
+POST   /interviews
+GET    /interviews
+GET    /interviews/{id}
+PUT    /interviews/{id}
+DELETE /interviews/{id}
+```
+
+### Question Generation
+
+```text
+POST /interviews/{id}/generate-questions
+```
+
+### Questions
+
+```text
+POST   /questions
+GET    /questions
+GET    /questions/{id}
+PUT    /questions/{id}
+DELETE /questions/{id}
+```
+
+### Responses
+
+```text
+POST   /responses
+GET    /responses
+GET    /responses/{id}
+DELETE /responses/{id}
+```
+
+### Evaluation
+
+The evaluation endpoint receives a response ID, retrieves the associated question and answer, sends the relevant information to Gemini, validates the structured result, and stores the evaluation.
+
+## Running the Backend Locally
 
 ### 1. Clone the repository
 
-``` bash
+```bash
 git clone https://github.com/Hisham-05/AI-Powered-Interview-Evaluator.git
 cd AI-Powered-Interview-Evaluator
 ```
@@ -256,212 +304,420 @@ cd AI-Powered-Interview-Evaluator
 
 Windows:
 
-``` powershell
+```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 ```
 
 Linux / macOS:
 
-``` bash
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install the Python dependencies
+### 3. Install dependencies
 
-``` bash
+```bash
 pip install -r requirements.txt
 ```
 
-The backend currently imports a few packages that should also be present
-in the environment:
+### 4. Configure environment variables
 
-``` bash
-pip install openai deepgram-sdk "pwdlib[argon2]"
-```
+Create a `.env` file:
 
-If you are setting up the project from scratch, make sure these
-dependencies are included in `requirements.txt` as well.
-
-### 4. Create the PostgreSQL database
-
-Create a PostgreSQL database and set the connection string in `.env`.
-
-Example:
-
-``` text
+```text
 DATABASE_URL=postgresql://username:password@localhost:5432/interview_evaluator
-```
-
-### 5. Add API keys
-
-The backend reads these values from the environment:
-
-``` text
-DATABASE_URL=postgresql://username:password@localhost:5432/interview_evaluator
-GOOGLE_API_KEY=your_gemini_api_key
+GOOGLE_API_KEY=your_google_api_key
 DEEPGRAM_API_KEY=your_deepgram_api_key
 ```
 
-Do not commit the `.env` file.
+Never commit `.env` files or API keys to GitHub.
 
-### 6. Start FastAPI
+### 5. Start the backend
 
-``` bash
+```bash
 uvicorn app.main:app --reload
 ```
 
-The API will be available at:
+The API will normally be available at:
 
-``` text
+```text
 http://localhost:8000
 ```
 
 Swagger documentation:
 
-``` text
+```text
 http://localhost:8000/docs
 ```
 
-## Running the frontend
+## Running the Frontend Locally
 
-Open another terminal and go into the frontend directory:
+Open a second terminal:
 
-``` bash
+```bash
 cd frontend
-```
-
-Install the JavaScript dependencies:
-
-``` bash
 npm install
 ```
 
-Start Vite:
+For local development, configure:
 
-``` bash
+```text
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-The frontend runs on:
+## Production Architecture
 
-``` text
-http://localhost:5173
+The application is deployed as a full-stack cloud application using AWS for hosting and Neon PostgreSQL for the production database.
+
+```text
+                    Users
+                      |
+                      v
+             CloudFront (HTTPS)
+                      |
+                      v
+              S3 Static Frontend
+                      |
+                API requests
+                      |
+                      v
+              Nginx on EC2
+                      |
+                      v
+       Gunicorn + Uvicorn Workers
+                      |
+          +-----------+-----------+
+          |                       |
+          v                       v
+   Neon PostgreSQL          Gemini / Deepgram
 ```
 
-The frontend uses `VITE_API_BASE_URL` if it is set. Otherwise it
-defaults to:
+### Frontend
 
-``` text
-http://localhost:8000
+The React frontend is built with Vite and deployed using:
+
+- Amazon S3
+- Amazon CloudFront
+- CloudFront Origin Access Control (OAC)
+
+The S3 bucket is private. CloudFront serves the frontend without making the bucket publicly accessible.
+
+### Backend
+
+The FastAPI backend runs on Amazon EC2 using:
+
+- Gunicorn
+- Uvicorn workers
+- Nginx
+- systemd
+- Let's Encrypt / Certbot
+
+Nginx receives public HTTPS traffic and forwards requests to FastAPI running privately on:
+
+```text
+127.0.0.1:8000
 ```
 
-## Current API flow
+Port `8000` is not exposed publicly.
 
-Some of the main endpoints are:
+systemd keeps the backend service running and restarts it if the process stops.
 
-``` text
-POST   /candidates
-POST   /candidates/login
+### Database
 
-POST   /interviews
-GET    /interviews/{id}
-POST   /interviews/{id}/generate-questions
-POST   /interviews/{id}/complete
+The production application uses Neon PostgreSQL.
 
-POST   /responses
-POST   /responses/skipped
-POST   /responses/transcribe
+The backend connects to Neon using SQLAlchemy and `psycopg2`.
 
-POST   /responses/{id}/generate-evaluation
-POST   /interview/{id}/generate-evaluation
+### AI Services
 
-GET    /questions
-GET    /responses
-GET    /evaluations
+The application uses:
+
+- Google Gemini for question generation and answer evaluation
+- Deepgram for speech-to-text transcription
+
+API keys are stored as backend environment variables and are not included in the frontend build.
+
+## Production Environment Variables
+
+### Backend
+
+```text
+GOOGLE_API_KEY=
+DEEPGRAM_API_KEY=
+DATABASE_URL=
 ```
 
-The application normally uses the frontend to drive this flow rather
-than calling every endpoint manually.
+These values are stored on the backend server and are not committed to the repository.
 
-## A note about authentication
+### Frontend
 
-The current login implementation is intentionally simple.
-
-After a successful login, the backend returns the candidate ID and the
-frontend stores it in local storage:
-
-``` text
-candidate_id -> localStorage
+```text
+VITE_API_BASE_URL=
 ```
 
-The home page then uses that ID when creating an interview.
+The production frontend is built with the backend API URL supplied through the Vite production environment.
 
-This is enough for the current development stage, but it is not a
-complete production authentication system. There is no JWT or
-server-side session yet, and the frontend currently relies on the stored
-candidate ID.
+The frontend does not contain Gemini, Deepgram, or database credentials.
 
-## Development notes
+## Production Deployment Flow
 
-A lot of the project has been built by testing each part separately
-before moving to the next one.
+Frontend:
 
-The database relationships were designed around the interview attempt
-rather than around a candidate's entire history. This makes it possible
-to trace a result back through:
-
-``` text
-InterviewResult
-    -> Interview
-    -> Question
-    -> Response
-    -> Evaluation
+```text
+React source
+     |
+     v
+npm run build
+     |
+     v
+Vite production build
+     |
+     v
+Amazon S3
+     |
+     v
+CloudFront
+     |
+     v
+User's browser
 ```
 
-The scoring logic also keeps skipped questions separate from evaluated
-answers. A skipped question still has a `Response` row so the interview
-can be completed, but it does not get sent to Gemini.
+Backend:
 
-For audio answers, the browser records a WebM file, FastAPI sends it to
-Deepgram, and the transcript becomes the stored response.
+```text
+FastAPI application
+     |
+     v
+EC2
+     |
+     v
+Gunicorn
+     |
+     v
+Uvicorn workers
+     |
+     v
+Nginx
+     |
+     v
+HTTPS
+```
 
-## Project status
+Backend integrations:
 
-The core interview flow is working and the project is still under
-development.
+```text
+FastAPI
+   |
+   +-----> Neon PostgreSQL
+   |
+   +-----> Gemini
+   |
+   +-----> Deepgram
+```
 
-Current pieces include:
+## HTTPS and Certificate Renewal
 
--   Candidate accounts and password hashing
--   Candidate login
--   Interview creation
--   Gemini question generation
--   Five-question interview flow
--   Typed answers
--   Recorded answers
--   Deepgram transcription
--   Skip-question handling
--   Gemini answer evaluation
--   Weighted interview scoring
--   Results page
+The backend is served through HTTPS using a Let's Encrypt certificate.
 
-There are still areas that can be improved, especially around production
-authentication, authorization, error handling, database migrations, and
-making the results flow more robust.
+Certbot is configured with a systemd timer to periodically check for certificate renewal.
 
-## Why I built this
+After renewal, Nginx is reloaded so that the renewed certificate is used.
 
-The project is mainly a practical way to learn how the pieces of a
-full-stack AI application fit together.
+## Security
 
-Instead of treating the LLM as the whole application, the project puts
-it inside a normal backend architecture with a relational database, API
-layer, validation, audio processing, and a frontend.
+The current deployment includes:
 
-That means the interesting problems are not only about calling an LLM.
-They are also about deciding how the data should be related, what should
-happen when a candidate skips a question, how to handle failed
-transcription, and how to keep one interview attempt separate from
-another.
+- HTTPS for public backend traffic
+- Private S3 bucket
+- CloudFront Origin Access Control
+- Port `8000` kept private
+- SSH restricted to the administrator's IP
+- API keys stored in environment variables
+- `.env` files excluded from Git
+- AWS IAM permissions scoped to the required deployment resources
+
+Future security improvements include stronger authentication and authorization, rate limiting, secret management, and additional API hardening.
+
+## Testing
+
+### Backend testing
+
+Swagger / OpenAPI was used to test:
+
+- Candidate operations
+- Login
+- Interview creation
+- Question generation
+- Response submission
+- AI evaluation
+- Invalid resource IDs
+- Skipped questions
+- Error handling
+
+### Database verification
+
+PostgreSQL data was inspected during development to verify that API operations created and modified the expected records.
+
+### Production end-to-end testing
+
+The deployed application was tested through the production frontend.
+
+The complete flow was tested:
+
+```text
+Signup
+  |
+  v
+Login
+  |
+  v
+Create Interview
+  |
+  v
+Generate Questions
+  |
+  v
+Answer Questions
+  |
+  +----> Type Answer
+  |
+  +----> Record Audio
+  |          |
+  |       Deepgram
+  |          |
+  |       Transcript
+  |
+  +----> Skip Question
+  |
+  v
+Submit Response
+  |
+  v
+AI Evaluation
+  |
+  v
+Results
+```
+
+Audio handling was also tested with unsuccessful audio submissions followed by a successful recording, confirming that the application could recover from failed transcription attempts.
+
+## Development Lessons
+
+### SQLAlchemy relationships
+
+While developing the ORM relationships, mapper configuration issues highlighted the importance of correct model imports and relationship configuration.
+
+### FastAPI response validation
+
+Response validation was debugged by comparing:
+
+```text
+Database object
+      |
+      v
+Endpoint return value
+      |
+      v
+Pydantic response model
+```
+
+This helped ensure that list endpoints return list-compatible schemas while single-resource endpoints return the correct object schema.
+
+### Database transactions
+
+Database operations use explicit commit, refresh, rollback, and session cleanup where appropriate.
+
+A failed transaction must be rolled back before the session can safely continue.
+
+### Production database connectivity
+
+A stale PostgreSQL connection was encountered during deployment. Restarting the application restored connectivity.
+
+This highlighted the importance of reliable database connection management when using a managed PostgreSQL service.
+
+### AWS IAM
+
+The EC2 instance uses an IAM role rather than storing long-lived AWS access keys on the server.
+
+The role provides the permissions required for frontend deployment operations such as S3 uploads and CloudFront invalidation.
+
+## Project Status
+
+The application has been implemented, deployed, and tested through the complete production interview flow.
+
+### Completed
+
+- Candidate signup
+- Candidate login
+- Password hashing with Argon2
+- Interview creation
+- Gemini question generation
+- Five-question interview flow
+- Typed answers
+- Recorded answers
+- Speech-to-text transcription
+- Skip-question handling
+- Gemini answer evaluation
+- Structured AI evaluation
+- Interview scoring
+- Results page
+- React frontend
+- Neon PostgreSQL production database
+- AWS S3 frontend hosting
+- CloudFront distribution
+- EC2 backend hosting
+- Nginx reverse proxy
+- Gunicorn + Uvicorn workers
+- HTTPS with Let's Encrypt
+- Automatic certificate renewal
+- Production end-to-end testing
+- Git/GitHub version control
+
+### Future Improvements
+
+- Stronger authentication and authorization
+- Server-side session/token management
+- Database migrations with Alembic
+- More comprehensive error handling
+- LLM retry and timeout strategies
+- Rate limiting
+- Production monitoring and logging
+- Stronger API validation
+- More robust result presentation
+- Additional security hardening
+- Optional RAG-based interview customization
+
+## Why I Built This
+
+The project is mainly a practical way to learn how the pieces of a full-stack AI application fit together.
+
+Instead of treating the LLM as the whole application, the project puts it inside a normal backend architecture with a relational database, API layer, validation, audio processing, frontend, cloud infrastructure, and external AI services.
+
+The interesting problems are therefore not only about calling an LLM.
+
+They also include:
+
+- Designing relational data models
+- Keeping separate interview attempts independent
+- Connecting questions to responses
+- Handling skipped questions
+- Processing audio input
+- Handling failed transcription
+- Validating structured LLM output
+- Persisting AI evaluations
+- Calculating interview scores
+- Connecting React to FastAPI
+- Deploying services to AWS
+- Configuring HTTPS and reverse proxies
+- Managing environment variables
+- Configuring IAM permissions
+
+The project represents an attempt to understand the complete lifecycle of an AI-powered application rather than only the AI API call.
