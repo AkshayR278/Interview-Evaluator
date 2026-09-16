@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import apiClient from "../api/client";
 
 function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+  const justSignedUp = location.state?.justSignedUp;
+
+  const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -43,6 +46,12 @@ function Login() {
       <div className="max-w-sm w-full mx-auto">
         <p className="text-sm tracking-wide text-ink/60 mb-4">Welcome back</p>
         <h1 className="text-3xl font-medium mb-8">Log in</h1>
+
+        {justSignedUp && (
+          <p className="text-sm text-success mb-4">
+            Account created. Log in to get started.
+          </p>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
@@ -86,6 +95,13 @@ function Login() {
             {isSubmitting ? "Logging in..." : "Log in"}
           </button>
         </form>
+
+        <p className="text-sm text-ink/60 mt-6">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-accent hover:underline">
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );
