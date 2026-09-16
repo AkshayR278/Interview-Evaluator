@@ -124,7 +124,7 @@ function Home() {
           <button
             type="submit"
             disabled={isStarting}
-            className="inline-block bg-accent text-white px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
+            className="inline-block bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
           >
             {isStarting ? "Preparing questions..." : "Start practice interview"}
           </button>

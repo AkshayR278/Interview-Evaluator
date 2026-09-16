@@ -25,15 +25,13 @@ function Interview() {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
-          <h1 className="text-2xl font-medium mb-2">
-            No interview in progress
-          </h1>
+          <h1 className="text-2xl font-medium mb-2">No interview in progress</h1>
           <p className="text-ink/70 mb-6">
             Start a new practice interview from the home screen.
           </p>
           <button
             onClick={() => navigate("/home")}
-            className="bg-accent text-white px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors"
+            className="bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors"
           >
             Go home
           </button>
@@ -45,9 +43,9 @@ function Interview() {
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
 
-  // Shared by all response paths: once a response is saved,
-  // either move to the next question or, on the last one,
-  // mark the interview complete and head to the results screen.
+  // Shared by both the typed-answer and recorded-answer paths: once a
+  // response is saved, either move to the next question or, on the last
+  // one, mark the interview complete and head to the results screen.
   async function advanceOrFinish() {
     if (isLastQuestion) {
       await apiClient.post(`/interviews/${interviewId}/complete`);
@@ -70,14 +68,13 @@ function Interview() {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
-    stop();
+    stop(); // stop any TTS still playing when the user submits
 
     try {
       await apiClient.post("/responses", {
         question_id: currentQuestion.id,
         answer: answerText,
       });
-
       await advanceOrFinish();
     } catch (err) {
       if (err.response?.status === 409) {
@@ -93,24 +90,41 @@ function Interview() {
 
   async function handleSubmitRecording() {
     if (!recorder.audioBlob) return;
-
     setError(null);
     setIsSubmitting(true);
     stop();
 
     const formData = new FormData();
-
     // Filename matters less than the field name matching what FastAPI
     // expects: `audio_file`, since that's the UploadFile parameter name.
     formData.append("audio_file", recorder.audioBlob, "answer.webm");
 
     try {
-      await apiClient.post("/responses/transcribe", formData, {
-        params: { question_id: currentQuestion.id },
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const { data: savedResponse } = await apiClient.post(
+        "/responses/transcribe",
+        formData,
+        {
+          params: { question_id: currentQuestion.id },
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
-      // /responses/transcribe already creates the Response row.
+      // Deepgram can return a 200 with an empty transcript if it didn't
+      // pick up any speech (too quiet, mic issue, stopped too early).
+      // The backend already saved that blank Response row, so a retry
+      // would otherwise hit the "already answered" 409 check -- delete
+      // it first so the person can genuinely try again.
+      if (!savedResponse.answer || !savedResponse.answer.trim()) {
+        await apiClient.delete(`/responses/${savedResponse.id}`);
+        setError(
+          "We didn't catch any speech in that recording. Try again, speaking a bit louder."
+        );
+        recorder.reset();
+        return;
+      }
+
+      // Note: unlike the typed path, /responses/transcribe already saves
+      // the Response row itself -- there's no separate POST /responses call.
       await advanceOrFinish();
     } catch (err) {
       if (err.response?.status === 409) {
@@ -135,13 +149,12 @@ function Interview() {
       await apiClient.post("/responses/skipped", null, {
         params: { question_id: currentQuestion.id },
       });
-
       await advanceOrFinish();
     } catch (err) {
       if (err.response?.status === 409) {
         handleAlreadyAnswered();
       } else {
-        setError("Couldn't skip this question. Try again.");
+        setError("Couldn't skip that question. Try again.");
       }
       console.error(err);
     } finally {
@@ -163,7 +176,6 @@ function Interview() {
           <p className="text-sm text-ink/60 mb-2">
             Question {currentIndex + 1} of {questions.length}
           </p>
-
           <div className="h-px bg-line relative">
             <div
               className="h-px bg-accent absolute top-0 left-0 transition-all"
@@ -178,13 +190,10 @@ function Interview() {
           <h1 className="text-2xl sm:text-3xl font-medium leading-snug">
             {currentQuestion.question}
           </h1>
-
           <button
             type="button"
             onClick={() =>
-              isSpeaking
-                ? stop()
-                : speak(currentQuestion.question)
+              isSpeaking ? stop() : speak(currentQuestion.question)
             }
             className="shrink-0 border border-line rounded-sm px-3 py-2 text-sm text-ink/70 hover:bg-surface transition-colors"
           >
@@ -199,19 +208,18 @@ function Interview() {
             onClick={() => switchMode("type")}
             className={`px-3 py-1.5 rounded-sm transition-colors ${
               answerMode === "type"
-                ? "bg-ink text-white"
+                ? "bg-accent text-on-accent"
                 : "text-ink/60 hover:bg-surface"
             }`}
           >
             Type answer
           </button>
-
           <button
             type="button"
             onClick={() => switchMode("record")}
             className={`px-3 py-1.5 rounded-sm transition-colors ${
               answerMode === "record"
-                ? "bg-ink text-white"
+                ? "bg-accent text-on-accent"
                 : "text-ink/60 hover:bg-surface"
             }`}
           >
@@ -230,31 +238,18 @@ function Interview() {
               className="w-full border border-line bg-surface px-4 py-3 rounded-sm text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-accent resize-none"
             />
 
-            {error && (
-              <p className="text-sm text-accent-warm mt-3">
-                {error}
-              </p>
-            )}
+            {error && <p className="text-sm text-accent-warm mt-3">{error}</p>}
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-4 bg-accent text-white px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
+              className="mt-4 bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
             >
               {isSubmitting
                 ? "Submitting..."
                 : isLastQuestion
                 ? "Finish interview"
                 : "Next question"}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleSkip}
-              disabled={isSubmitting}
-              className="mt-3 block text-sm text-ink/60 hover:text-ink underline disabled:opacity-40"
-            >
-              Skip question
             </button>
           </form>
         ) : (
@@ -276,7 +271,6 @@ function Interview() {
                   <div className="w-16 h-16 rounded-full bg-accent-warm/20 flex items-center justify-center animate-pulse">
                     <span className="w-3 h-3 rounded-full bg-accent-warm" />
                   </div>
-
                   <button
                     type="button"
                     onClick={recorder.stopRecording}
@@ -287,45 +281,34 @@ function Interview() {
                 </>
               )}
 
-              {recorder.status === "stopped" &&
-                recorder.audioBlob && (
-                  <div className="w-full flex flex-col items-center gap-3">
-                    <audio
-                      controls
-                      src={URL.createObjectURL(recorder.audioBlob)}
-                      className="w-full max-w-xs"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={recorder.reset}
-                      className="text-sm text-ink/60 hover:text-ink underline"
-                    >
-                      Re-record
-                    </button>
-                  </div>
-                )}
+              {recorder.status === "stopped" && recorder.audioBlob && (
+                <div className="w-full flex flex-col items-center gap-3">
+                  <audio
+                    controls
+                    src={URL.createObjectURL(recorder.audioBlob)}
+                    className="w-full max-w-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={recorder.reset}
+                    className="text-sm text-ink/60 hover:text-ink underline"
+                  >
+                    Re-record
+                  </button>
+                </div>
+              )}
             </div>
 
             {recorder.error && (
-              <p className="text-sm text-accent-warm mt-3">
-                {recorder.error}
-              </p>
+              <p className="text-sm text-accent-warm mt-3">{recorder.error}</p>
             )}
-
-            {error && (
-              <p className="text-sm text-accent-warm mt-3">
-                {error}
-              </p>
-            )}
+            {error && <p className="text-sm text-accent-warm mt-3">{error}</p>}
 
             <button
               type="button"
               onClick={handleSubmitRecording}
-              disabled={
-                recorder.status !== "stopped" || isSubmitting
-              }
-              className="mt-4 bg-accent text-white px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-40"
+              disabled={recorder.status !== "stopped" || isSubmitting}
+              className="mt-4 bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-40"
             >
               {isSubmitting
                 ? "Uploading..."
@@ -333,17 +316,17 @@ function Interview() {
                 ? "Finish interview"
                 : "Next question"}
             </button>
-
-            <button
-              type="button"
-              onClick={handleSkip}
-              disabled={isSubmitting}
-              className="mt-3 block text-sm text-ink/60 hover:text-ink underline disabled:opacity-40"
-            >
-              Skip question
-            </button>
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={handleSkip}
+          disabled={isSubmitting}
+          className="mt-4 text-sm text-ink/40 hover:text-ink/70 transition-colors disabled:opacity-40"
+        >
+          Skip this question
+        </button>
       </div>
     </div>
   );

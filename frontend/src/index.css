@@ -1,24 +1,36 @@
-@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap");
 @import "tailwindcss";
 
 /*
   Design tokens for the Interview Evaluator frontend.
-  Concept: a quiet, focused "interview room" -- not a gamified quiz app.
-  Serif headings (Newsreader) carry gravity/thoughtfulness; Inter handles
-  functional UI text (buttons, inputs, labels) since it's built for clarity
-  at small sizes.
+  Concept: a quiet study room, late at night, one lamp on -- a solitary,
+  disciplined moment of rehearsal, not a gamified quiz app or a corporate
+  dashboard.
+
+  Serif (Fraunces) carries the human part -- the actual interview
+  questions, headlines. Inter handles all UI chrome (buttons, labels,
+  forms) since it's built for clarity at small sizes. A monospace face
+  is reserved ONLY for the score digits on the results screen -- not
+  decorative, just because scores are data.
+
+  Token names are unchanged from the light-mode version on purpose: since
+  every component already references these Tailwind tokens (bg-canvas,
+  text-ink, bg-accent, etc.), the entire visual rebrand happens here --
+  no JSX color-class changes needed anywhere else.
 */
 @theme {
-  --color-ink: #171a21;          /* primary text, near-black with a blue cast */
-  --color-canvas: #efede6;       /* warm paper-grey background, not stark white */
-  --color-surface: #f8f7f3;      /* slightly lighter than canvas, for cards/panels */
-  --color-accent: #3454d1;       /* confident cobalt blue - primary actions */
-  --color-accent-warm: #c97a3d;  /* muted clay - used sparingly, score/attention states */
-  --color-success: #4b7f6b;      /* muted green - good scores */
-  --color-line: #d7d3c7;         /* hairline borders/dividers */
+  --color-ink: #edeae2;         /* primary text -- warm off-white, not stark white */
+  --color-canvas: #14161c;      /* page background -- deep charcoal-navy, not pure black */
+  --color-surface: #1b1e26;     /* inputs, panels -- slightly lighter than canvas */
+  --color-accent: #e8a33d;      /* warm desk-lamp amber -- the one bold color in the app */
+  --color-on-accent: #14161c;   /* dark text/icon color placed on top of amber fills */
+  --color-accent-warm: #d97372; /* muted rose -- errors, low scores */
+  --color-success: #7fb698;     /* muted sage -- high scores */
+  --color-line: #2a2e38;        /* hairline borders/dividers on dark surfaces */
 
-  --font-display: "Newsreader", Georgia, serif;
+  --font-display: "Fraunces", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 body {
@@ -29,4 +41,15 @@ body {
 
 h1, h2, h3 {
   font-family: var(--font-display);
+}
+
+/* Visible keyboard focus everywhere, not just on inputs with an explicit ring class */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
 }
