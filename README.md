@@ -70,7 +70,7 @@ The interview stores:
 - Role
 - Status
 
-Gemini generates exactly 5 technical questions for the interview.
+Gemini generates between 1 and 20 technical questions for the interview. The candidate chooses the number when starting; the default is 5.
 
 ### Answering questions
 
@@ -268,6 +268,8 @@ DELETE /interviews/{id}
 POST /interviews/{id}/generate-questions
 ```
 
+Pass `count` as a query parameter (`1`–`20`, default `5`) to choose how many questions to generate. For example: `POST /interviews/1/generate-questions?count=8`.
+
 ### Questions
 
 ```text
@@ -322,19 +324,29 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure environment variables
+### 4. Create a PostgreSQL database
 
-Create a `.env` file:
+Start PostgreSQL, then create an empty database named `interview_evaluator` (for example, from `psql`):
+
+```sql
+CREATE DATABASE interview_evaluator;
+```
+
+The backend creates its tables when it starts. Keep the database running while you use the app.
+
+### 5. Configure environment variables
+
+Create a `.env` file in the repository root:
 
 ```text
-DATABASE_URL=postgresql://username:password@localhost:5432/interview_evaluator
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/interview_evaluator
 GOOGLE_API_KEY=your_google_api_key
 DEEPGRAM_API_KEY=your_deepgram_api_key
 ```
 
-Never commit `.env` files or API keys to GitHub.
+Replace the database username and password with your local PostgreSQL credentials. The Gemini-powered question generation and answer evaluation require a Google API key; voice transcription requires a Deepgram API key. Never commit `.env` files or API keys to GitHub.
 
-### 5. Start the backend
+### 6. Start the backend
 
 ```bash
 uvicorn app.main:app --reload
@@ -354,14 +366,14 @@ http://localhost:8000/docs
 
 ## Running the Frontend Locally
 
-Open a second terminal:
+Open a second terminal in the repository:
 
 ```bash
 cd frontend
-npm install
+npm ci
 ```
 
-For local development, configure:
+The frontend defaults to `http://localhost:8000` for the API. To override it, create `frontend/.env`:
 
 ```text
 VITE_API_BASE_URL=http://localhost:8000
@@ -372,6 +384,8 @@ Start the development server:
 ```bash
 npm run dev
 ```
+
+Open the local URL printed by Vite (normally `http://localhost:5173`). Create an account, log in, and start a practice interview. The browser will ask for microphone permission only if you choose to record an answer.
 
 ## Production Architecture
 
@@ -452,7 +466,7 @@ API keys are stored as backend environment variables and are not included in the
 ```text
 GOOGLE_API_KEY=
 DEEPGRAM_API_KEY=
-DATABASE_URL=
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/interview_evaluator
 ```
 
 These values are stored on the backend server and are not committed to the repository.

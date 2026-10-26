@@ -24,14 +24,14 @@ function Interview() {
   if (!interviewId || !questions || questions.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="text-center max-w-sm">
+        <div className="panel-card max-w-md p-8 text-center">
           <h1 className="text-2xl font-medium mb-2">No interview in progress</h1>
-          <p className="text-ink/70 mb-6">
+          <p className="muted-copy mb-6">
             Start a new practice interview from the home screen.
           </p>
           <button
             onClick={() => navigate("/home")}
-            className="bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors"
+            className="primary-button"
           >
             Go home
           </button>
@@ -169,81 +169,102 @@ function Interview() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center px-6 sm:px-12">
-      <div className="max-w-xl w-full mx-auto">
-        {/* Progress: a thin line rather than numbered step circles */}
-        <div className="mb-8">
-          <p className="text-sm text-ink/60 mb-2">
-            Question {currentIndex + 1} of {questions.length}
+    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-6 sm:px-10">
+      <header className="app-header">
+        <div className="brand-lockup">
+          <span className="brand-mark" aria-hidden="true">i</span>
+          <span>Interview Practice</span>
+        </div>
+        <span className="muted-copy text-sm">Practice session</span>
+      </header>
+
+      <div className="flex flex-1 flex-col justify-center py-10 sm:py-14">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <p className="eyebrow">
+            <span className="eyebrow-highlight">Question {currentIndex + 1}</span>{" "}
+            <span className="muted-copy">/ {questions.length}</span>
           </p>
-          <div className="h-px bg-line relative">
-            <div
-              className="h-px bg-accent absolute top-0 left-0 transition-all"
-              style={{
-                width: `${((currentIndex + 1) / questions.length) * 100}%`,
-              }}
-            />
+          <span className="muted-copy text-xs">
+            {Math.round(((currentIndex + 1) / questions.length) * 100)}% complete
+          </span>
+        </div>
+        <div
+          className="progress-track mb-8"
+          role="progressbar"
+          aria-label="Interview progress"
+          aria-valuemin={0}
+          aria-valuemax={questions.length}
+          aria-valuenow={currentIndex + 1}
+        >
+          <div
+            className="progress-fill"
+            style={{
+              width: `${((currentIndex + 1) / questions.length) * 100}%`,
+            }}
+          />
+        </div>
+
+        <section className="panel-card p-5 sm:p-9">
+          <div className="mb-7 flex items-start justify-between gap-4">
+            <div>
+              <p className="eyebrow mb-3">Take a moment to think</p>
+              <h1 className="text-2xl font-medium leading-snug sm:text-3xl">
+                {currentQuestion.question}
+              </h1>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                isSpeaking ? stop() : speak(currentQuestion.question)
+              }
+              className="secondary-button min-h-0 shrink-0 px-3 py-2 text-sm"
+              aria-label={isSpeaking ? "Stop reading question" : "Read question aloud"}
+            >
+              {isSpeaking ? "Stop audio" : "Read aloud"}
+            </button>
           </div>
-        </div>
 
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <h1 className="text-2xl sm:text-3xl font-medium leading-snug">
-            {currentQuestion.question}
-          </h1>
-          <button
-            type="button"
-            onClick={() =>
-              isSpeaking ? stop() : speak(currentQuestion.question)
-            }
-            className="shrink-0 border border-line rounded-sm px-3 py-2 text-sm text-ink/70 hover:bg-surface transition-colors"
+          <div
+            className="mb-4 inline-flex border border-line bg-surface text-sm"
+            role="group"
+            aria-label="Choose answer method"
           >
-            {isSpeaking ? "Stop" : "Play"}
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => switchMode("type")}
+              aria-pressed={answerMode === "type"}
+              className="mode-button border-r border-line px-4 py-2 transition-colors"
+            >
+              Type answer
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode("record")}
+              aria-pressed={answerMode === "record"}
+              className="mode-button px-4 py-2 transition-colors"
+            >
+              Record answer
+            </button>
+          </div>
 
-        {/* Mode toggle: type vs record */}
-        <div className="flex gap-1 mb-4 text-sm">
-          <button
-            type="button"
-            onClick={() => switchMode("type")}
-            className={`px-3 py-1.5 rounded-sm transition-colors ${
-              answerMode === "type"
-                ? "bg-accent text-on-accent"
-                : "text-ink/60 hover:bg-surface"
-            }`}
-          >
-            Type answer
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("record")}
-            className={`px-3 py-1.5 rounded-sm transition-colors ${
-              answerMode === "record"
-                ? "bg-accent text-on-accent"
-                : "text-ink/60 hover:bg-surface"
-            }`}
-          >
-            Record answer
-          </button>
-        </div>
-
-        {answerMode === "type" ? (
-          <form onSubmit={handleSubmitTyped}>
+          {answerMode === "type" ? (
+            <form onSubmit={handleSubmitTyped} className="space-y-4">
             <textarea
               value={answerText}
               onChange={(e) => setAnswerText(e.target.value)}
               required
               rows={8}
               placeholder="Type your answer..."
-              className="w-full border border-line bg-surface px-4 py-3 rounded-sm text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+              aria-label="Your answer"
+              className="app-textarea min-h-52 resize-y px-4 py-3 text-sm leading-relaxed"
             />
 
-            {error && <p className="text-sm text-accent-warm mt-3">{error}</p>}
+            {error && <p role="alert" className="text-sm text-accent-warm">{error}</p>}
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-4 bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
+              className="primary-button"
             >
               {isSubmitting
                 ? "Submitting..."
@@ -251,30 +272,37 @@ function Interview() {
                 ? "Finish interview"
                 : "Next question"}
             </button>
-          </form>
-        ) : (
-          <div>
-            <div className="border border-line bg-surface rounded-sm px-4 py-10 flex flex-col items-center justify-center gap-4">
+            </form>
+          ) : (
+            <div>
+            <div className="flex min-h-64 flex-col items-center justify-center gap-4 border border-dotted border-ink bg-surface px-4 py-10">
+              <p className="muted-copy text-sm">
+                {recorder.status === "recording"
+                  ? "Recording your answer..."
+                  : recorder.status === "stopped"
+                  ? "Listen back before submitting"
+                  : "When you're ready, record your answer"}
+              </p>
               {recorder.status === "idle" && (
                 <button
                   type="button"
                   onClick={recorder.startRecording}
-                  className="w-16 h-16 rounded-full bg-accent-warm text-white flex items-center justify-center hover:bg-accent-warm/90 transition-colors"
+                  className="flex h-16 w-16 items-center justify-center border border-ink bg-accent text-ink transition-colors hover:bg-white"
                   aria-label="Start recording"
                 >
-                  <span className="w-4 h-4 rounded-full bg-white" />
+                  <span className="h-4 w-4 bg-ink" />
                 </button>
               )}
 
               {recorder.status === "recording" && (
                 <>
-                  <div className="w-16 h-16 rounded-full bg-accent-warm/20 flex items-center justify-center animate-pulse">
-                    <span className="w-3 h-3 rounded-full bg-accent-warm" />
+                  <div className="flex h-16 w-16 animate-pulse items-center justify-center border border-ink bg-accent">
+                    <span className="h-3 w-3 bg-ink" />
                   </div>
                   <button
                     type="button"
                     onClick={recorder.stopRecording}
-                    className="border border-line rounded-sm px-4 py-2 text-sm hover:bg-canvas transition-colors"
+                    className="secondary-button"
                   >
                     Stop recording
                   </button>
@@ -282,7 +310,7 @@ function Interview() {
               )}
 
               {recorder.status === "stopped" && recorder.audioBlob && (
-                <div className="w-full flex flex-col items-center gap-3">
+                <div className="flex w-full flex-col items-center gap-3">
                   <audio
                     controls
                     src={URL.createObjectURL(recorder.audioBlob)}
@@ -291,24 +319,24 @@ function Interview() {
                   <button
                     type="button"
                     onClick={recorder.reset}
-                    className="text-sm text-ink/60 hover:text-ink underline"
+                    className="text-sm text-accent underline underline-offset-4 hover:text-ink"
                   >
                     Re-record
                   </button>
-                </div>
-              )}
+                  </div>
+                )}
             </div>
 
             {recorder.error && (
-              <p className="text-sm text-accent-warm mt-3">{recorder.error}</p>
+              <p role="alert" className="mt-3 text-sm text-accent-warm">{recorder.error}</p>
             )}
-            {error && <p className="text-sm text-accent-warm mt-3">{error}</p>}
+            {error && <p role="alert" className="mt-3 text-sm text-accent-warm">{error}</p>}
 
             <button
               type="button"
               onClick={handleSubmitRecording}
               disabled={recorder.status !== "stopped" || isSubmitting}
-              className="mt-4 bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-40"
+              className="primary-button mt-4"
             >
               {isSubmitting
                 ? "Uploading..."
@@ -319,16 +347,17 @@ function Interview() {
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={handleSkip}
-          disabled={isSubmitting}
-          className="mt-4 text-sm text-ink/40 hover:text-ink/70 transition-colors disabled:opacity-40"
-        >
-          Skip this question
-        </button>
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={isSubmitting}
+            className="mt-5 block text-sm text-ink/50 underline underline-offset-4 transition-colors hover:text-ink disabled:opacity-40"
+          >
+            Skip this question
+          </button>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
 

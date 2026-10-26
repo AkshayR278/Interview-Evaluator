@@ -1,55 +1,435 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
-/*
-  Design tokens for the Interview Evaluator frontend.
-  Concept: a quiet study room, late at night, one lamp on -- a solitary,
-  disciplined moment of rehearsal, not a gamified quiz app or a corporate
-  dashboard.
-
-  Serif (Fraunces) carries the human part -- the actual interview
-  questions, headlines. Inter handles all UI chrome (buttons, labels,
-  forms) since it's built for clarity at small sizes. A monospace face
-  is reserved ONLY for the score digits on the results screen -- not
-  decorative, just because scores are data.
-
-  Token names are unchanged from the light-mode version on purpose: since
-  every component already references these Tailwind tokens (bg-canvas,
-  text-ink, bg-accent, etc.), the entire visual rebrand happens here --
-  no JSX color-class changes needed anywhere else.
-*/
 @theme {
-  --color-ink: #edeae2;         /* primary text -- warm off-white, not stark white */
-  --color-canvas: #14161c;      /* page background -- deep charcoal-navy, not pure black */
-  --color-surface: #1b1e26;     /* inputs, panels -- slightly lighter than canvas */
-  --color-accent: #e8a33d;      /* warm desk-lamp amber -- the one bold color in the app */
-  --color-on-accent: #14161c;   /* dark text/icon color placed on top of amber fills */
-  --color-accent-warm: #d97372; /* muted rose -- errors, low scores */
-  --color-success: #7fb698;     /* muted sage -- high scores */
-  --color-line: #2a2e38;        /* hairline borders/dividers on dark surfaces */
+  --color-ink: #171717;
+  --color-canvas: #f7f7f2;
+  --color-surface: #ffffff;
+  --color-accent: #f0e442;
+  --color-on-accent: #171717;
+  --color-accent-warm: #b43d2e;
+  --color-success: #285c45;
+  --color-line: #b9b9b2;
 
   --font-display: "Fraunces", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-mono: "IBM Plex Mono", "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background-color: var(--color-canvas);
+  min-height: 100vh;
+  background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: var(--font-display);
 }
 
-/* Visible keyboard focus everywhere, not just on inputs with an explicit ring class */
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
 :focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: 2px solid #171717;
+  outline-offset: 3px;
 }
 
 ::selection {
-  background-color: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: -0.04em;
+}
+
+.brand-mark {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--color-ink);
+  background: var(--color-accent);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.auth-shell {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+  gap: clamp(2rem, 7vw, 7rem);
+  align-items: center;
+  width: min(1240px, 100%);
+  margin-inline: auto;
+  padding: 3rem clamp(1.5rem, 6vw, 5rem);
+}
+
+.auth-story {
+  max-width: 38rem;
+}
+
+.auth-story h1 {
+  max-width: 10ch;
+  margin: 2.5rem 0 1.5rem;
+  font-size: clamp(3.2rem, 7vw, 6.5rem);
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 0.98;
+}
+
+.auth-story-copy {
+  max-width: 28rem;
+  color: #51514c;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.auth-feature-list {
+  display: grid;
+  gap: 0;
+  margin-top: 2.5rem;
+  border-top: 1px dotted var(--color-ink);
+}
+
+.auth-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding-block: 0.8rem;
+  border-bottom: 1px dotted var(--color-ink);
+  color: #3f3f3a;
+  font-size: 0.875rem;
+}
+
+.auth-feature-mark {
+  display: grid;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  background: var(--color-ink);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.auth-card,
+.panel-card {
+  border: 1px dotted var(--color-ink);
+  background: var(--color-surface);
+  box-shadow: none;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 29rem;
+  justify-self: end;
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+  border-top: 0.5rem solid var(--color-ink);
+}
+
+.auth-card h2 {
+  margin: 0.55rem 0;
+  font-family: var(--font-display);
+  font-size: 2.35rem;
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+
+.auth-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.auth-field label {
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.auth-field input,
+.app-input,
+.app-textarea {
+  width: 100%;
+  border: 1px solid var(--color-ink);
+  background: #fff;
+  color: var(--color-ink);
+  transition: background-color 140ms ease;
+}
+
+.auth-field input,
+.app-input {
+  min-height: 3rem;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.9rem;
+}
+
+.auth-field input::placeholder,
+.app-input::placeholder,
+.app-textarea::placeholder {
+  color: #777770;
+}
+
+.auth-field input:focus,
+.app-input:focus,
+.app-textarea:focus {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+  background: #fffde5;
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border: 1px solid var(--color-ink);
+  padding: 0.75rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.primary-button {
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.secondary-button {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--color-accent);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.eyebrow {
+  color: #44443e;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.eyebrow-highlight {
+  display: inline;
+  padding: 0.18rem 0.35rem;
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+.muted-copy {
+  color: #62625c;
+}
+
+.app-header {
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px dotted var(--color-ink);
+}
+
+.progress-track {
+  height: 0.45rem;
+  overflow: hidden;
+  border: 1px solid var(--color-ink);
+  background: #fff;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-ink);
+  transition: width 300ms ease;
+}
+
+.editorial-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px dotted var(--color-ink);
+  border-bottom: 1px dotted var(--color-ink);
+}
+
+.editorial-cell {
+  min-height: 6.5rem;
+  padding: 1rem;
+}
+
+.editorial-cell + .editorial-cell {
+  border-left: 1px dotted var(--color-ink);
+}
+
+.editorial-cell:first-child {
+  background: var(--color-accent);
+}
+
+.editorial-label {
+  color: #54544e;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.editorial-value {
+  margin-bottom: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.question-index {
+  display: inline-block;
+  min-width: 2.5rem;
+  margin-right: 0.6rem;
+  padding: 0.15rem 0.3rem;
+  background: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.score-track {
+  height: 0.45rem;
+  border: 1px solid var(--color-ink);
+  background: #fff;
+}
+
+.score-track-fill {
+  height: 100%;
+  background: var(--color-ink);
+}
+
+.score-poster {
+  display: grid;
+  min-width: 10rem;
+  justify-items: start;
+  border-right: 1px dotted var(--color-ink);
+  padding: 0 2rem 0 0;
+}
+
+.score-poster-number {
+  margin-block: 0.2rem;
+  font-family: var(--font-display);
+  font-size: clamp(4.5rem, 10vw, 7rem);
+  letter-spacing: -0.08em;
+  line-height: 0.95;
+}
+
+.editorial-loader {
+  background: var(--color-accent);
+}
+
+.status-note {
+  border-left: 0.3rem solid var(--color-accent);
+  background: #fffde5;
+  padding: 0.7rem 0.85rem;
+}
+
+.mode-button[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+@media (max-width: 760px) {
+  .home-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-layout > * {
+    min-width: 0;
+  }
+
+  .home-layout h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+
+  .auth-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    max-width: 38rem;
+    padding-block: 2rem;
+  }
+
+  .auth-story h1 {
+    max-width: 12ch;
+    margin-top: 1.5rem;
+    font-size: clamp(3rem, 12vw, 4.6rem);
+  }
+
+  .auth-feature-list {
+    display: none;
+  }
+
+  .auth-card {
+    max-width: none;
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 420px) {
+  .editorial-cell {
+    min-height: 5.5rem;
+    padding: 0.7rem;
+  }
+
+  .editorial-value {
+    font-size: 1.25rem;
+  }
+
+  .score-poster {
+    min-width: 0;
+    border-right: 0;
+    border-bottom: 1px dotted var(--color-ink);
+    padding: 0 0 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

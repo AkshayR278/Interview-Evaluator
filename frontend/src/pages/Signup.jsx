@@ -38,77 +38,103 @@ function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center px-6 sm:px-12">
-      <div className="max-w-sm w-full mx-auto">
-        <p className="text-sm tracking-wide text-ink/60 mb-4">Get started</p>
-        <h1 className="text-3xl font-medium mb-8">Create your account</h1>
+    <main className="auth-shell">
+      <section className="auth-story">
+        <div className="brand-lockup">
+          <span className="brand-mark" aria-hidden="true">i</span>
+          <span>Interview Practice</span>
+        </div>
+        <p className="eyebrow mt-10"><span className="eyebrow-highlight">Make every answer count</span></p>
+        <h1>Build confidence one practice at a time.</h1>
+        <p className="auth-story-copy">
+          Set up your account and turn interview nerves into a clear plan for
+          what to practice next.
+        </p>
+        <ul className="auth-feature-list" aria-label="Practice features">
+          <li className="auth-feature">
+            <span className="auth-feature-mark" aria-hidden="true">✓</span>
+            Questions adapted to your target role
+          </li>
+          <li className="auth-feature">
+            <span className="auth-feature-mark" aria-hidden="true">✓</span>
+            Speak or type — practice your way
+          </li>
+          <li className="auth-feature">
+            <span className="auth-feature-mark" aria-hidden="true">✓</span>
+            Actionable feedback after every session
+          </li>
+        </ul>
+      </section>
 
-        <form onSubmit={handleSignup} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm text-ink/70 mb-1">
-              Name
-            </label>
+      <section className="auth-card" aria-labelledby="signup-title">
+        <p className="eyebrow">Get started</p>
+        <h2 id="signup-title">Create your account</h2>
+        <p className="muted-copy mb-7 text-sm">
+          Your next interview starts with a little practice.
+        </p>
+
+        <form onSubmit={handleSignup} className="space-y-5">
+          <div className="auth-field">
+            <label htmlFor="name">Name</label>
             <input
               id="name"
               type="text"
+              autoComplete="name"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-line bg-surface px-3 py-2 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              placeholder="Your name"
             />
           </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm text-ink/70 mb-1">
-              Email
-            </label>
+          <div className="auth-field">
+            <label htmlFor="email">Email address</label>
             <input
               id="email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-line bg-surface px-3 py-2 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              placeholder="you@example.com"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm text-ink/70 mb-1"
-            >
-              Password
-            </label>
+          <div className="auth-field">
+            <label htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
+              autoComplete="new-password"
               required
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-line bg-surface px-3 py-2 rounded-sm text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              placeholder="At least 8 characters"
             />
+            <span className="muted-copy text-xs">Use at least 8 characters.</span>
           </div>
 
-          {error && <p className="text-sm text-accent-warm">{error}</p>}
+          {error && <p role="alert" className="text-sm text-accent-warm">{error}</p>}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
+            className="primary-button w-full"
           >
             {isSubmitting ? "Creating account..." : "Create account"}
+            {!isSubmitting && <span aria-hidden="true">→</span>}
           </button>
         </form>
 
-        <p className="text-sm text-ink/60 mt-6">
+        <p className="muted-copy mt-7 text-center text-sm">
           Already have an account?{" "}
-          <Link to="/" className="text-accent hover:underline">
+          <Link to="/" className="font-medium text-accent hover:underline">
             Log in
           </Link>
         </p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
 

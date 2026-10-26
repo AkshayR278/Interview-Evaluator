@@ -1,4 +1,4 @@
-from fastapi import HTTPException, APIRouter
+from fastapi import HTTPException, APIRouter, Query
 
 from app.models.interview import Interview
 from app.schemas.question import CreateQuestion, QuestionResponse, UpdateQuestion
@@ -108,7 +108,7 @@ def delete_question(id: int):
         session.close()
 
 @router.post("/interviews/{id}/generate-questions", response_model=list[QuestionResponse])
-def llm_questions(id: int):
+def llm_questions(id: int, count: int = Query(default=5, ge=1, le=20)):
     session = sessionLocal()
     try:
         statement = select(Interview).where(Interview.id == id)
@@ -118,7 +118,11 @@ def llm_questions(id: int):
         if interview is None:
             raise HTTPException(status_code=404, detail="Interview not found")
 
-        new_questions = generate_questions(role=interview.role, company= interview.company)
+        new_questions = generate_questions(
+            role=interview.role,
+            company=interview.company,
+            count=count,
+        )
         list_of_questions = [Question(interview_id=id, question=question) for question in new_questions]
         session.add_all(list_of_questions)
         session.commit()

@@ -2,16 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import apiClient from "../api/client";
 
-// Shared score-band -> color mapping, used by both the big radial score
-// and each per-question sub-score meter, so the same visual language
-// (rose = low, warm off-white = mid, sage = high) means the same thing
-// everywhere on this page. Matches the calibrated band anchors from the
-// evaluation rubric: 0-20 / 21-50 / 51-75 / 76-100 (the bottom two bands
-// share a color here since both represent "needs real work").
 const BAND_CLASSES = {
-  success: { text: "text-success", stroke: "stroke-success", bg: "bg-success" },
-  neutral: { text: "text-ink", stroke: "stroke-ink", bg: "bg-ink" },
-  low: { text: "text-accent-warm", stroke: "stroke-accent-warm", bg: "bg-accent-warm" },
+  success: { text: "text-success", bg: "bg-success" },
+  neutral: { text: "text-ink", bg: "bg-ink" },
+  low: { text: "text-accent-warm", bg: "bg-accent-warm" },
 };
 
 function scoreBand(score) {
@@ -20,60 +14,28 @@ function scoreBand(score) {
   return "low";
 }
 
-// The one bold visual moment on this page: a radial ring showing the
-// total score, with the actual digits set in monospace since they're
-// data, not prose.
-function ScoreRing({ score }) {
-  const size = 148;
-  const strokeWidth = 8;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - score / 100);
+function ScoreDisplay({ score }) {
   const band = BAND_CLASSES[scoreBand(score)];
 
   return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          strokeWidth={strokeWidth}
-          className="stroke-line"
-          fill="none"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className={`${band.stroke} transition-all duration-700 ease-out`}
-          fill="none"
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className={`font-mono text-4xl font-semibold ${band.text}`}>
-          {score}
-        </span>
-        <span className="text-xs text-ink/40">out of 100</span>
+    <div className="score-poster" aria-label={`${score} out of 100`}>
+      <span className="eyebrow">Session score</span>
+      <div className={`score-poster-number ${band.text}`}>
+        {String(score).padStart(2, "0")}
       </div>
+      <span className="editorial-label">/ 100</span>
     </div>
   );
 }
 
-// A single sub-score row: label, a thin horizontal track, and the
-// numeric value in monospace at the end.
 function ScoreMeter({ label, score }) {
   const band = BAND_CLASSES[scoreBand(score)];
   return (
     <div className="flex items-center gap-3">
       <span className="text-xs text-ink/50 w-20 shrink-0">{label}</span>
-      <div className="flex-1 h-1.5 rounded-full bg-line overflow-hidden">
+      <div className="score-track flex-1 overflow-hidden">
         <div
-          className={`h-full rounded-full ${band.bg} transition-all duration-500 ease-out`}
+          className={`score-track-fill ${band.bg} transition-all duration-500 ease-out`}
           style={{ width: `${score}%` }}
         />
       </div>
@@ -163,14 +125,14 @@ function Results() {
   if (!interviewId) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="text-center max-w-sm">
+        <div className="panel-card max-w-md p-8 text-center">
           <h1 className="text-2xl font-medium mb-2">No results to show</h1>
-          <p className="text-ink/70 mb-6">
+          <p className="muted-copy mb-6">
             Start a new practice interview from the home screen.
           </p>
           <button
             onClick={() => navigate("/home")}
-            className="bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors"
+            className="primary-button"
           >
             Go home
           </button>
@@ -181,20 +143,25 @@ function Results() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6">
-        <p className="text-ink/60">Scoring your interview...</p>
+      <div className="flex min-h-screen items-center justify-center px-6">
+        <div className="panel-card max-w-md p-8 text-center" role="status">
+          <div className="editorial-loader mx-auto mb-5 h-10 w-10 animate-spin border-2 border-line border-t-ink" />
+          <p className="eyebrow">Your practice report</p>
+          <h1 className="mt-2 text-2xl font-medium">Reviewing your answers</h1>
+          <p className="muted-copy mt-2 text-sm">This can take a few moments.</p>
+        </div>
       </div>
     );
   }
 
   if (status === "error") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="text-center max-w-sm">
-          <p className="text-accent-warm mb-4">{errorMessage}</p>
+      <div className="flex min-h-screen items-center justify-center px-6">
+        <div className="panel-card max-w-md p-8 text-center">
+          <p role="alert" className="mb-4 text-accent-warm">{errorMessage}</p>
           <button
             onClick={() => navigate("/home")}
-            className="bg-accent text-on-accent px-6 py-3 rounded-sm text-sm font-medium hover:bg-accent/90 transition-colors"
+            className="primary-button"
           >
             Go home
           </button>
@@ -204,69 +171,123 @@ function Results() {
   }
 
   return (
-    <div className="min-h-screen px-6 sm:px-12 py-16">
-      <div className="max-w-2xl mx-auto">
-        <p className="text-sm tracking-wide text-ink/60 mb-6">
-          Interview complete
-        </p>
+    <main className="mx-auto min-h-screen w-full max-w-4xl px-6 py-8 sm:px-10 sm:py-12">
+      <header className="app-header mb-10">
+        <div className="brand-lockup">
+          <span className="brand-mark" aria-hidden="true">i</span>
+          <span>Interview Practice</span>
+        </div>
+        <button
+          onClick={() => navigate("/home")}
+          className="secondary-button min-h-0 px-4 py-2 text-sm"
+        >
+          Back to home
+        </button>
+      </header>
 
+      <div className="mb-8">
+        <p className="eyebrow"><span className="eyebrow-highlight">Interview complete</span></p>
+        <h1 className="mt-2 text-3xl font-medium tracking-tight sm:text-4xl">
+          Your practice report
+        </h1>
+        <p className="muted-copy mt-2">A clear look at what went well and what to build on.</p>
+      </div>
+
+      <section className="panel-card mb-10 flex flex-col items-center gap-6 p-6 sm:flex-row sm:p-8">
         {totalScore !== null ? (
-          <div className="mb-12">
-            <ScoreRing score={totalScore} />
-          </div>
+          <>
+            <ScoreDisplay score={totalScore} />
+            <div className="text-center sm:text-left">
+              <p className="eyebrow">Overall score</p>
+              <h2 className="mt-2 text-2xl font-semibold">
+                {totalScore >= 76
+                  ? "Strong performance"
+                  : totalScore >= 51
+                  ? "Good foundation"
+                  : "Room to grow"}
+              </h2>
+              <p className="muted-copy mt-2 max-w-md text-sm leading-6">
+                Use this score as a snapshot of this session, then focus on the
+                feedback below to improve your next attempt.
+              </p>
+            </div>
+          </>
         ) : (
-          <h1 className="text-2xl font-medium mb-12">Here's your breakdown</h1>
+          <div className="text-center sm:text-left">
+            <p className="eyebrow">Evaluation summary</p>
+            <h2 className="mt-2 text-2xl font-semibold">Here&apos;s your breakdown</h2>
+            <p className="muted-copy mt-2 text-sm">
+              The overall score is unavailable, but you can still review each answer.
+            </p>
+          </div>
         )}
+      </section>
 
-        <div className="space-y-10">
+      <section aria-labelledby="answer-review-title">
+        <div className="mb-5">
+          <p className="eyebrow">Answer by answer</p>
+          <h2 id="answer-review-title" className="mt-1 text-2xl font-medium">
+            Detailed feedback
+          </h2>
+        </div>
+        <div className="space-y-4">
           {breakdown.map(({ question, response, evaluation }, i) => (
-            <div key={question.id} className="border-t border-line pt-6">
-              <p className="text-sm text-ink/50 mb-1">Question {i + 1}</p>
-              <h2 className="text-lg font-medium mb-3">{question.question}</h2>
+            <article key={question.id} className="panel-card p-5 sm:p-7">
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <p className="eyebrow">Question {i + 1}</p>
+                {!response?.answer && (
+                  <span className="border border-dotted border-ink px-3 py-1 font-mono text-xs text-ink/50">
+                    Not answered
+                  </span>
+                )}
+              </div>
+              <h3 className="mb-4 text-lg font-medium leading-snug">{question.question}</h3>
 
               {response ? (
-                <p className="text-sm text-ink/70 mb-5 leading-relaxed">
+                <p className="muted-copy mb-5 whitespace-pre-wrap text-sm leading-relaxed">
                   {response.answer}
                 </p>
               ) : (
-                <p className="text-sm text-ink/40 italic mb-5">Not answered</p>
+                <p className="muted-copy mb-5 text-sm italic">Not answered</p>
               )}
 
               {evaluation ? (
                 <>
-                  <div className="space-y-2 mb-4 max-w-xs">
+                  <div className="mb-5 grid max-w-xl gap-x-8 gap-y-3 sm:grid-cols-2">
                     <ScoreMeter label="Accuracy" score={evaluation.accuracy_score} />
                     <ScoreMeter label="Relevance" score={evaluation.relevance_score} />
                     <ScoreMeter label="Technical" score={evaluation.technical_score} />
                     <ScoreMeter label="Grammar" score={evaluation.grammar_score} />
                     <ScoreMeter label="Confidence" score={evaluation.confidence_score} />
                   </div>
-                  <p className="text-sm text-ink/80 leading-relaxed mb-2">
+                  <p className="text-sm leading-relaxed text-ink/85">
                     {evaluation.feedback}
                   </p>
                   {evaluation.strengths && (
-                    <p className="text-sm text-success">
+                    <p className="status-note mt-3 border border-success/15 text-sm leading-relaxed text-success">
+                      <span className="font-semibold">Strengths: </span>
                       {evaluation.strengths}
                     </p>
                   )}
                 </>
               ) : (
-                <p className="text-sm text-ink/40 italic">
+                <p className="muted-copy text-sm italic">
                   No evaluation available for this question.
                 </p>
               )}
-            </div>
+            </article>
           ))}
         </div>
 
         <button
           onClick={() => navigate("/home")}
-          className="mt-12 border border-line rounded-sm px-6 py-3 text-sm font-medium hover:bg-surface transition-colors"
+          className="primary-button mt-8"
         >
-          Start another practice interview
+          Start another practice
+          <span aria-hidden="true">→</span>
         </button>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
 
